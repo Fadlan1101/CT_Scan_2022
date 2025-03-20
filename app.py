@@ -101,80 +101,125 @@ if uploaded_file is not None:
         else:
             st.warning("Column 'bil_ctscan' not found in the dataset!")
 
-        # ---- BAR CHART FOR "admitward" (Only where "kodsebabkeluar" = "ADMIT") ----
-        st.markdown("### Ward Placement for Admitted Patients")
+        # Filter data where 'CTscanProsedure' has a value
+        df_filtered = df.dropna(subset=['CTscanProsedure'])
+        
+        # ---- BAR GRAPH FOR 'kodsebabkeluar' (Including NULL values) ----
+        st.markdown("### Distribution of Admission Status of Patients Who Perform CT Scan")
+        if "kodsebabkeluar" in df_filtered.columns:
+            kod_counts = df_filtered["kodsebabkeluar"].fillna("Unknown").value_counts().reset_index()
+            kod_counts.columns = ["kodsebabkeluar", "Count"]
 
-        if "kodsebabkeluar" in filtered_df.columns and "admitward" in filtered_df.columns:
-            admitward_df = filtered_df[filtered_df["kodsebabkeluar"] == "ADMIT"]
+            fig_kodsebabkeluar = px.bar(
+                kod_counts,
+                x="kodsebabkeluar",
+                y="Count",
+                title="Distribution of Admission Status of Patients Who Perform CT Scan",
+                text="Count",
+                color="kodsebabkeluar",
+                color_discrete_sequence=px.colors.qualitative.Set3  
+            )
+            st.plotly_chart(fig_kodsebabkeluar, use_container_width=True)
+        else:
+            st.warning("Column 'kodsebabkeluar' not found in the dataset!")
 
-            if not admitward_df.empty:
-                admitward_counts = admitward_df["admitward"].value_counts().reset_index()
+        # ---- BAR GRAPH FOR 'specialty' (Including NULL values, only 'ADMIT' from 'kodsebabkeluar') ----
+        st.markdown("### Distribution of Specialty for Admitted Patients")
+        if "specialty" in df_filtered.columns and "kodsebabkeluar" in df_filtered.columns:
+            admit_specialty_df = df_filtered[df_filtered["kodsebabkeluar"] == "ADMIT"]
+            
+            if not admit_specialty_df.empty:
+                specialty_counts = admit_specialty_df["specialty"].fillna("Unknown").value_counts().reset_index()
+                specialty_counts.columns = ["specialty", "Count"]
+                
+                fig_specialty = px.bar(
+                    specialty_counts,
+                    x="specialty",
+                    y="Count",
+                    title="Distribution of Specialty for Admitted Patients",
+                    text="Count",
+                    color="specialty",
+                    color_discrete_sequence=px.colors.qualitative.Set3  
+                )
+                st.plotly_chart(fig_specialty, use_container_width=True)
+            else:
+                st.warning("No admitted patients found in the dataset!")
+        else:
+            st.warning("Column 'specialty' or 'kodsebabkeluar' not found in the dataset!")
+
+        # ---- BAR GRAPH FOR 'admitward' (Including NULL values, only 'ADMIT' from 'kodsebabkeluar') ----
+        st.markdown("### Distribution of Admit Wards for Admitted Patients")
+        if "admitward" in df_filtered.columns and "kodsebabkeluar" in df_filtered.columns:
+            admit_ward_df = df_filtered[df_filtered["kodsebabkeluar"] == "ADMIT"]
+            
+            if not admit_ward_df.empty:
+                admitward_counts = admit_ward_df["admitward"].fillna("Unknown").value_counts().reset_index()
                 admitward_counts.columns = ["admitward", "Count"]
-
+                
                 fig_admitward = px.bar(
                     admitward_counts,
                     x="admitward",
                     y="Count",
-                    title="Ward Placement for Admitted Patients",
+                    title="Distribution of Admit Wards for Admitted Patients",
                     text="Count",
                     color="admitward",
                     color_discrete_sequence=px.colors.qualitative.Set3  
                 )
                 st.plotly_chart(fig_admitward, use_container_width=True)
             else:
-                st.warning("No data found for 'admitward' where 'kodsebabkeluar' = 'ADMIT'.")
+                st.warning("No admitted patients found in the dataset!")
         else:
-            st.warning("Column 'admitward' not found in the dataset!")
+            st.warning("Column 'admitward' or 'kodsebabkeluar' not found in the dataset!")
 
-        # ---- BAR CHART FOR "PDx" (Only where "kodsebabkeluar" = "ADMIT", Top 3) ----
-        st.markdown("### Top 3 Most Common Primary Diagnoses for Ordering CT Scans (Admitted Patients)")
-
-        if "kodsebabkeluar" in filtered_df.columns and "PDx" in filtered_df.columns:
-            pdx_df = filtered_df[filtered_df["kodsebabkeluar"] == "ADMIT"]
-
-            if not pdx_df.empty:
-                pdx_counts = pdx_df["PDx"].value_counts().reset_index()
+        # ---- BAR GRAPH FOR 'PDx' (Top 3, only 'ADMIT' from 'kodsebabkeluar' and with 'CTscanProsedure') ----
+        st.markdown("### Top 3 Primary Diagnoses for Admitted Patients with CT Scan")
+        if "PDx" in df_filtered.columns and "kodsebabkeluar" in df_filtered.columns:
+            admit_pdx_df = df_filtered[(df_filtered["kodsebabkeluar"] == "ADMIT")]
+            
+            if not admit_pdx_df.empty:
+                pdx_counts = admit_pdx_df["PDx"].fillna("Unknown").value_counts().reset_index()
                 pdx_counts.columns = ["PDx", "Count"]
                 pdx_counts = pdx_counts.head(3)  # Show only Top 3
-
+                
                 fig_pdx = px.bar(
                     pdx_counts,
                     x="PDx",
                     y="Count",
-                    title="Top 3 Most Common Primary Diagnoses for Ordering CT Scans (Admitted Patients)",
+                    title="Top 3 Primary Diagnoses for Admitted Patients with CT Scan",
                     text="Count",
                     color="PDx",
                     color_discrete_sequence=px.colors.qualitative.Set3  
                 )
                 st.plotly_chart(fig_pdx, use_container_width=True)
             else:
-                st.warning("No data found for 'PDx' where 'kodsebabkeluar' = 'ADMIT'.")
+                st.warning("No admitted patients found in the dataset!")
         else:
-            st.warning("Column 'PDx' not found in the dataset!")
+            st.warning("Column 'PDx' or 'kodsebabkeluar' not found in the dataset!")
 
-        # ---- BAR CHART FOR "PDx" (Only where "kodsebabkeluar" = "HOME", Top 3) ----
-        st.markdown("### Top 3 Most Common Primary Diagnoses for Ordering CT Scans (Discharge Patients)")
-
-        if "kodsebabkeluar" in filtered_df.columns and "PDx" in filtered_df.columns:
-            pdx_home_df = filtered_df[filtered_df["kodsebabkeluar"] == "HOME"]
-
-            if not pdx_home_df.empty:
-                pdx_home_counts = pdx_home_df["PDx"].value_counts().reset_index()
-                pdx_home_counts.columns = ["PDx", "Count"]
-                pdx_home_counts = pdx_home_counts.head(3)  # Show only Top 3
-
-                fig_pdx_home = px.bar(
-                    pdx_home_counts,
+        # ---- BAR GRAPH FOR 'PDx' (Top 3, only 'HOME' from 'kodsebabkeluar' and with 'CTscanProsedure') ----
+        st.markdown("### Top 3 Primary Diagnoses for Discharged Patients with CT Scan")
+        if "PDx" in df_filtered.columns and "kodsebabkeluar" in df_filtered.columns:
+            home_pdx_df = df_filtered[(df_filtered["kodsebabkeluar"] == "HOME")]
+            
+            if not home_pdx_df.empty:
+                home_pdx_counts = home_pdx_df["PDx"].fillna("Unknown").value_counts().reset_index()
+                home_pdx_counts.columns = ["PDx", "Count"]
+                home_pdx_counts = home_pdx_counts.head(3)  # Show only Top 3
+                
+                fig_home_pdx = px.bar(
+                    home_pdx_counts,
                     x="PDx",
                     y="Count",
-                    title="Top 3 Most Common Primary Diagnoses for Ordering CT Scans (Discharge Patients)",
+                    title="Top 3 Primary Diagnoses for Discharged Patients with CT Scan",
                     text="Count",
                     color="PDx",
                     color_discrete_sequence=px.colors.qualitative.Set3  
                 )
-                st.plotly_chart(fig_pdx_home, use_container_width=True)
+                st.plotly_chart(fig_home_pdx, use_container_width=True)
             else:
-                st.warning("No data found for 'PDx' where 'kodsebabkeluar' = 'HOME'.")
+                st.warning("No discharged patients found in the dataset!")
+        else:
+            st.warning("Column 'PDx' or 'kodsebabkeluar' not found in the dataset!")
 
         # ---- HIDE STREAMLIT STYLE ----
         hide_st_style = """
